@@ -10,7 +10,7 @@ os.environ["API_KEY"] = 'AIzaSyDLZ25ToQVFKpFjC1RZy0nV0YB3ANKzZwk'
 genai.configure(api_key=os.environ["API_KEY"])
 model = genai.GenerativeModel('gemini-1.5-pro-latest', generation_config={"response_mime_type": "application/json"})
 
-@app.get("/get-subtopics/")
+@app.get("/get-subtopics")
 async def get_subtopics(topic: str = Query(..., description=f"Generate subtopics for a given topic ")):
     try:
         # Accessing the Gemini API to get subtopics
