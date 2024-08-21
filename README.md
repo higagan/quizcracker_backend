@@ -18,5 +18,5 @@ This API provides a RESTful interface for generating quizzes based on a given to
 
 **Code Execution**
 1. Navigate to your application's local code directory in the command line.
-2. To run fast api app using uvicorn, use following command : uvicorn main:app --reload (NOTE: main (main.py) is the entry point for our FastAPI application without extension.)
+2. To run fast api app using uvicorn, use following command : uvicorn main:app --reload [NOTE: main (**main.py**) is the entry point for our FastAPI application without extension.]
 3. You can access the application on http://localhost:/8000
