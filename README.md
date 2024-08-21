@@ -9,7 +9,7 @@ This API provides a RESTful interface for generating quizzes based on a given to
 
 2. **AI Model:** A pre-trained AI model capable of generating text, such as a language model or a question-answering system.
 
-3. **Libraries:** Depending on the requirements, you might need additional libraries.
+3. **Libraries:** Depending on the requirements, we might need additional libraries.
 
 
 ****Environment Setup****
@@ -18,5 +18,5 @@ This API provides a RESTful interface for generating quizzes based on a given to
 
 **Code Execution**
 1. Navigate to your application's local code directory in the command line.
-2. To run fast api app using uvicorn, use following command : uvicorn main:app --reload (NOTE: main here is the filename where your FastAPI code is placed without extension.)
+2. To run fast api app using uvicorn, use following command : uvicorn main:app --reload (NOTE: main (main.py) is the entry point for our FastAPI application without extension.)
 3. You can access the application on http://localhost:/8000
