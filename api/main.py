@@ -49,7 +49,7 @@ async def get_subtopics(topic: str = Query(..., description="Generate subtopics 
             status_code=500, detail=f"An error occurred: {str(e)}"
         )
 
-@app.post("/get-quiz/")
+@app.post("/get-quiz")
 async def get_mcq_questions(request: QuizGenerationRequest):
     global quiz_counter
 
