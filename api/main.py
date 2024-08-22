@@ -50,7 +50,7 @@ async def get_subtopics(topic: str = Query(..., description="Generate subtopics 
             status_code=500, detail=f"An error occurred: {str(e)}"
         )
 
-@app.post("/get-quiz")
+@app.post("/get-quiz/")
 async def get_questions(request: QuizGenerationRequest):
     global quiz_counter
 
@@ -61,7 +61,8 @@ async def get_questions(request: QuizGenerationRequest):
         question_types_str = ', '.join(request.questionTypes)
         
         prompt = (f"Generate {request.numQuestions} {question_types_str} questions on the topic '{request.topic}' "
-                  f"with a focus on '{subtopics_str}' at the difficulty levels: {difficulties_str} along with correct answer for interview preparation .")
+                  f"with a focus on '{subtopics_str}' at the difficulty levels: {difficulties_str} along with correct answer for interview preparation."
+                   " Do not give questions that have no options and answer. For True or False questions give options as treu and false and answer as correct answer for it. ")
         
         response = model.generate_content(prompt)
         questions_data = json.loads(response.text.strip())  # Parse the JSON response
@@ -74,17 +75,17 @@ async def get_questions(request: QuizGenerationRequest):
         # Create a structured dictionary with numbered questions
         structured_questions = []
         for i, question_data in enumerate(questions_data):
-            question_id = f"question {i+1}"
+            question_id = f"question{i+1}"
             options = question_data.get("options", [])
-            structured_options = [{"id": chr(97 + idx), "text": option} for idx, option in enumerate(options)]
+            structured_options = [{"id": chr(97 + idx), "text": option.strip()} for idx, option in enumerate(options)]
 
-            # Find the ID of the correct answer based on the answer text
+            # Normalize answer and option texts for comparison
             answer_text = question_data["answer"].strip().lower()
             answer_id = next((opt["id"] for opt in structured_options if opt["text"].strip().lower() == answer_text), None)
 
             structured_question = {
                 "id": question_id,
-                "text": question_data["question"],
+                "text": question_data["question"].strip(),
                 "options": structured_options,
                 "answer": answer_id,
                 "difficulty": question_data["difficulty"]
