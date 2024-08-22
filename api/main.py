@@ -26,7 +26,7 @@ model = genai.GenerativeModel('gemini-1.5-pro-latest', generation_config={"respo
 class QuizGenerationRequest(BaseModel):
     topic: str
     subtopics: Optional[List[str]] = None  # Subtopics are optional
-    difficulties: List[str]  # Accepting multiple difficulty levels
+    difficulty: List[str]  # Accepting multiple difficulty levels
     numQuestions: int        # Number of questions
     questionTypes: List[str]  # Accepting multiple question types
 
@@ -57,41 +57,42 @@ async def get_questions(request: QuizGenerationRequest):
     try:
         # Generating a prompt for the Gemini API to create MCQs
         subtopics_str = ', '.join(request.subtopics) if request.subtopics else "general concepts"
-        difficulties_str = ', '.join(request.difficulties)
+        difficulty_str = ', '.join(request.difficulty)
         question_types_str = ', '.join(request.questionTypes)
         
         prompt = (f"Generate {request.numQuestions} {question_types_str} questions on the topic '{request.topic}' "
-                  f"with a focus on '{subtopics_str}' at the difficulty levels: {difficulties_str} along with correct answer for interview preparation."
-                   " Do not give questions that have no options and answer. For True or False questions give options as treu and false and answer as correct answer for it. ")
+                  f"with a focus on '{subtopics_str}' at the difficulty levels: {difficulty_str} along with correct answer for interview preparation."
+                   " Do not give questions that have no options and answer. For True or False questions give options as true and false and answer as correct answer for it. ")
         
         response = model.generate_content(prompt)
-        questions_data = json.loads(response.text.strip())  # Parse the JSON response
+        raw_questions = json.loads(response.text.strip())  # Parse the JSON response
 
-        # Generate a unique numeric ID for the quiz
+        # Structure the output as per the requested format
+        structured_questions = []
+        
         with counter_lock:
             quiz_counter += 1
             quiz_id = quiz_counter
 
-        # Create a structured dictionary with numbered questions
-        structured_questions = []
-        for i, question_data in enumerate(questions_data):
-            question_id = f"question {i+1}"
-            options = question_data.get("options", [])
-            structured_options = [{"id": chr(97 + idx), "text": option.strip()} for idx, option in enumerate(options)]
-
-            # Normalize answer and option texts for comparison
-            answer_text = question_data["answer"].strip().lower()
-            answer_id = next((opt["id"] for opt in structured_options if opt["text"].strip().lower() == answer_text), None)
-
+        for idx, question in enumerate(raw_questions):
+            options = [{"id": chr(97 + i), "text": option.strip()} for i, option in enumerate(question["options"])]
+            
+            # Find the correct option ID
+            answer_text = question["answer"].strip().lower()
+            answer_id = next(
+                (option["id"] for option in options if option["text"].lower() == answer_text), 
+                None
+            )
+            
             structured_question = {
-                "id": question_id,
-                "text": question_data["question"].strip(),
-                "options": structured_options,
-                "answer": answer_id,
-                "difficulty": question_data["difficulty"]
+                "id": f"question {quiz_id}",
+                "text": question["question"],
+                "options": options,
+                "answer": answer_id,  # Use the ID of the correct option
+                "difficulty": request.difficulty[0] if len(request.difficulty) == 1 else "medium"  # Assuming a default value of 'medium'
             }
             structured_questions.append(structured_question)
-
+        
         return {"id": quiz_id, "quiz": {"questions": structured_questions}}
 
     except Exception as e:
