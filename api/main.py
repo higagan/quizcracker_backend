@@ -19,7 +19,7 @@ app.add_middleware(
 )
 
 # Initialize the Gemini API client with your API key
-os.environ["API_KEY"] = 'AIzaSyD96CwakYFCjkqX5H1x1zE7roCj8I_yx54'
+os.environ["API_KEY"] = 'AIzaSyDwp8isE0zvA7MHRRoHdMaXsVBWRwRYF5o'
 genai.configure(api_key=os.environ["API_KEY"])
 model = genai.GenerativeModel('gemini-1.5-pro-latest', generation_config={"response_mime_type": "application/json"})
 
