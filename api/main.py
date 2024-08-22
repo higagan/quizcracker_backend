@@ -5,6 +5,7 @@ from pydantic import BaseModel
 import google.generativeai as genai
 import os
 import threading  # For thread-safe counter increment
+import json  # For parsing the JSON response
 
 app = FastAPI()
 
@@ -50,7 +51,7 @@ async def get_subtopics(topic: str = Query(..., description="Generate subtopics 
         )
 
 @app.post("/get-quiz")
-async def get_mcq_questions(request: QuizGenerationRequest):
+async def get_questions(request: QuizGenerationRequest):
     global quiz_counter
 
     try:
@@ -63,14 +64,34 @@ async def get_mcq_questions(request: QuizGenerationRequest):
                   f"with a focus on '{subtopics_str}' at the difficulty levels: {difficulties_str} along with correct answer for interview preparation .")
         
         response = model.generate_content(prompt)
-        questions = response.text.strip()
+        questions_data = json.loads(response.text.strip())  # Parse the JSON response
 
         # Generate a unique numeric ID for the quiz
         with counter_lock:
             quiz_counter += 1
             quiz_id = quiz_counter
 
-        return {"id": quiz_id, "quiz": questions}
+        # Create a structured dictionary with numbered questions
+        structured_questions = []
+        for i, question_data in enumerate(questions_data):
+            question_id = f"question {i+1}"
+            options = question_data.get("options", [])
+            structured_options = [{"id": chr(97 + idx), "text": option} for idx, option in enumerate(options)]
+
+            # Find the ID of the correct answer based on the answer text
+            answer_text = question_data["answer"].strip().lower()
+            answer_id = next((opt["id"] for opt in structured_options if opt["text"].strip().lower() == answer_text), None)
+
+            structured_question = {
+                "id": question_id,
+                "text": question_data["question"],
+                "options": structured_options,
+                "answer": answer_id,
+                "difficulty": question_data["difficulty"]
+            }
+            structured_questions.append(structured_question)
+
+        return {"id": quiz_id, "quiz": {"questions": structured_questions}}
 
     except Exception as e:
         raise HTTPException(
