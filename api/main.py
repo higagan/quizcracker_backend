@@ -50,7 +50,7 @@ async def get_subtopics(topic: str = Query(..., description="Generate subtopics 
             status_code=500, detail=f"An error occurred: {str(e)}"
         )
 
-@app.post("/get-quiz/")
+@app.post("/get-quiz")
 async def get_questions(request: QuizGenerationRequest):
     global quiz_counter
 
@@ -75,7 +75,7 @@ async def get_questions(request: QuizGenerationRequest):
         # Create a structured dictionary with numbered questions
         structured_questions = []
         for i, question_data in enumerate(questions_data):
-            question_id = f"question{i+1}"
+            question_id = f"question {i+1}"
             options = question_data.get("options", [])
             structured_options = [{"id": chr(97 + idx), "text": option.strip()} for idx, option in enumerate(options)]
 
