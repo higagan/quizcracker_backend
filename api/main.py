@@ -62,7 +62,8 @@ async def get_questions(request: QuizGenerationRequest):
         
         prompt = (f"Generate {request.numQuestions} {question_types_str} questions on the topic '{request.topic}' "
                   f"with a focus on '{subtopics_str}' at the difficulty levels: {difficulty_str} along with correct answer for interview preparation."
-                   " Do not give questions that have no options and answer. For True or False questions give options as true and false and answer as correct answer for it. ")
+                   " Do not give questions that have no options and answer. For True or False questions give options as true and false and answer as correct answer for it."
+                   "Format the output as valid JSON and ensure there are no unterminated strings or unescaped characters.")
         
         response = model.generate_content(prompt)
         raw_questions = json.loads(response.text.strip())  # Parse the JSON response
