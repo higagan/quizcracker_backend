@@ -40,6 +40,7 @@ async def get_subtopics(topic: str = Query(..., description="Generate subtopics 
         # Accessing the Gemini API to get subtopics
         response = model.generate_content(
             f"Provide a combined list of all the core concepts and advanced features in {topic} without explanation in brief in a list without segregation."
+            "Format the output as valid JSON and ensure there are no unterminated strings, special characters and unescaped characters."
         )
         subtopics = response.text.strip()
 
