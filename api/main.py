@@ -13,7 +13,7 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["quizcracker-testing.vercel.app"],  # Allows all origins, replace with specific domains if needed
+    allow_origins=["https://quizcracker-testing.vercel.app"],  # Allows all origins, replace with specific domains if needed
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers
