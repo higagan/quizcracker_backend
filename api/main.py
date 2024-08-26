@@ -117,7 +117,7 @@ async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
                 None
             )
             structured_question = {
-                "idx": f"question_{quiz_id}_{idx+1}",  # Generate a unique ID for each question
+                "id": f"question_{quiz_id}_{idx+1}",  # Generate a unique ID for each question
                
                 "text": question["question"],
                 "options": options,
