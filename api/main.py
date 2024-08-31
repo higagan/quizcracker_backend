@@ -20,12 +20,7 @@ app.add_middleware(
 )
 
 API_KEYS = [
-    'AIzaSyD96CwakYFCjkqX5H1x1zE7roCj8I_yx54',
-    'AIzaSyDTPMjLjmbbNZLimXuFZgWkvuyBRXVt32s',
-    'AIzaSyAj6HeKVo47_Y2wTuLqAI4fOsHKLH8wj5I',
-    'AIzaSyCgfYI-1yhg2zU-WmUNvRoY1QLs2Xb5_kE',
-    'AIzaSyAhYb1VdfqSjKZSRaM1RiAbPvDgWRjK-ko',
-    'AIzaSyDCYcMaRfAxFBrbrGxka8Wb0k2shAaanh4'
+    'AIzaSyAe0mFYAaMD5XRTWf78jy9Tf2Vzp_UkOHs'
     
     # add other keys here
 ]
