@@ -6,7 +6,6 @@ import google.generativeai as genai
 import os
 import threading  # For thread-safe counter increment
 import json  # For parsing the JSON response
-import random
 
 app = FastAPI()
 
@@ -19,14 +18,12 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-API_KEYS = [
-    'AIzaSyAe0mFYAaMD5XRTWf78jy9Tf2Vzp_UkOHs'
-    
-    # add other keys here
-]
+# Single API key
+API_KEY = 'AIzaSyAe0mFYAaMD5XRTWf78jy9Tf2Vzp_UkOHs'
 
-# Thread-safe storage of the API key for each request
-request_api_key = threading.local()
+# Configure the model with the single API key
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel('gemini-1.5-pro-latest', generation_config={"response_mime_type": "application/json"})
 
 class QuizGenerationRequest(BaseModel):
     topic: str
@@ -35,40 +32,10 @@ class QuizGenerationRequest(BaseModel):
     numQuestions: int        # Number of questions
     questionTypes: List[str]  # Accepting multiple question types
 
-def validate_api_key(api_key):
-    try:
-        genai.configure(api_key=api_key)
-        # A simple test to check if the key is valid
-        model = genai.GenerativeModel('gemini-1.5-pro-latest', generation_config={"response_mime_type": "application/json"})
-        test_response = model.generate_content("Test the API key validity.")
-        return True  # Key is valid
-    except Exception as e:
-        if "API_KEY_INVALID" in str(e):
-            return False  # Key is invalid
-        else:
-            raise e  # Some other error occurred
-
-def get_valid_api_key():
-    for api_key in API_KEYS:
-        if validate_api_key(api_key):
-            return api_key
-    raise HTTPException(status_code=500, detail="All API keys are expired or invalid.")
-
-def configure_model(api_key):
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemini-1.5-pro-latest', generation_config={"response_mime_type": "application/json"})
-
-@app.middleware("http")
-async def assign_api_key(request: Request, call_next):
-    valid_api_key = get_valid_api_key()
-    request.state.model = configure_model(valid_api_key)
-    response = await call_next(request)
-    return response
-
 @app.get("/get-subtopics")
 async def get_subtopics(request: Request, topic: str = Query(..., description="Generate subtopics for a given topic")):
     try:
-        response = request.state.model.generate_content(
+        response = model.generate_content(
             f"Provide a combined list of all the core concepts and advanced features in {topic} without explanation in brief in a list without segregation."
             "Format the output as valid JSON and ensure there are no unterminated strings, special characters and unescaped characters."
         )
@@ -91,11 +58,11 @@ async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
                   f"The response should be formatted as valid JSON, with each question containing a unique ID, the question text, options, correct answer, and difficulty level. "
                   f"Do not include questions without answers. The total length of the JSON response should be at least 150 characters. If the generated response is shorter, regenerate until the length requirement is met.")
         
-        response = request.state.model.generate_content(prompt)
+        response = model.generate_content(prompt)
         print(response.text.strip())
         if len(response.text.strip()) < 150:
             print("re-generating....")
-            response = request.state.model.generate_content(prompt)
+            response = model.generate_content(prompt)
 
         try:
             raw_questions = json.loads(response.text.strip().replace('\n', '').replace('\\n', ''))  # Parse the JSON response
@@ -113,7 +80,6 @@ async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
             )
             structured_question = {
                 "id": f"question_{quiz_id}_{idx+1}",  # Generate a unique ID for each question
-               
                 "text": question["question"],
                 "options": options,
                 "answer": answer_id,
