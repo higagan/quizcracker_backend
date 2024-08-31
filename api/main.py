@@ -6,8 +6,11 @@ import google.generativeai as genai
 import os
 import threading  # For thread-safe counter increment
 import json  # For parsing the JSON response
+import logging,time
 
 app = FastAPI()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Enable CORS
 app.add_middleware(
@@ -49,6 +52,8 @@ async def get_subtopics(request: Request, topic: str = Query(..., description="G
 @app.post("/get-quiz")
 async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
     try:
+        start_time = time.time()
+
         subtopics_str = ', '.join(quiz_request.subtopics) if quiz_request.subtopics else "general concepts"
         difficulty_str = ', '.join(quiz_request.difficulty)
         question_types_str = ', '.join(quiz_request.questionTypes)
@@ -58,16 +63,17 @@ async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
                   f"The response should be formatted as valid JSON, with each question containing a unique ID, the question text, options, correct answer, and difficulty level. "
                   f"Do not include questions without answers. The total length of the JSON response should be at least 150 characters. If the generated response is shorter, regenerate until the length requirement is met.")
         
-        response = model.generate_content(prompt)
-        print(response.text.strip())
-        if len(response.text.strip()) < 150:
-            print("re-generating....")
-            response = model.generate_content(prompt)
+        logging.info(f"Prompt generation took {time.time() - start_time:.2f} seconds")
 
-        try:
-            raw_questions = json.loads(response.text.strip().replace('\n', '').replace('\\n', ''))  # Parse the JSON response
-        except:
-            raw_questions = []
+        response = model.generate_content(prompt)
+
+        logging.info(f"API response took {time.time() - start_time:.2f} seconds")
+
+      
+
+        raw_questions = json.loads(response.text.strip().replace('\n', '').replace('\\n', ''))
+
+        logging.info(f"JSON processing took {time.time() - start_time:.2f} seconds")
 
         structured_questions = []
         quiz_id = id(request)
@@ -79,7 +85,7 @@ async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
                 None
             )
             structured_question = {
-                "id": f"question_{quiz_id}_{idx+1}",  # Generate a unique ID for each question
+                "id": f"question_{quiz_id}_{idx+1}",
                 "text": question["question"],
                 "options": options,
                 "answer": answer_id,
@@ -87,6 +93,8 @@ async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
             }
             structured_questions.append(structured_question)
         
+        logging.info(f"Total processing took {time.time() - start_time:.2f} seconds")
+
         return {"id": quiz_id, "quiz": {"questions": structured_questions}}
 
     except Exception as e:
