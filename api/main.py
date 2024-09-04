@@ -4,13 +4,16 @@ from typing import Optional, List
 from pydantic import BaseModel
 import google.generativeai as genai
 import os
-import threading  # For thread-safe counter increment
-import json  # For parsing the JSON response
-import logging,time
+import json
+import logging
+import time
 
-app = FastAPI()
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Create FastAPI instance
+app = FastAPI()
 
 # Enable CORS
 app.add_middleware(
@@ -69,8 +72,6 @@ async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
 
         logging.info(f"API response took {time.time() - start_time:.2f} seconds")
 
-      
-
         raw_questions = json.loads(response.text.strip().replace('\n', '').replace('\\n', ''))
 
         logging.info(f"JSON processing took {time.time() - start_time:.2f} seconds")
@@ -101,3 +102,8 @@ async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
         raise HTTPException(
             status_code=500, detail=f"An error occurred: {str(e)}"
         )
+
+# Main entry point for the application
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, workers=4)  # Adjust the number of workers as needed
