@@ -122,9 +122,8 @@ async def get_answer(request: Request, answer_request: MCQAnswerRequest):
 
         # Define the prompt for the AI model
         prompt = (
-            f"You are an intelligent assistant that helps answer multiple-choice questions. "
-            f"Below is the question and the options. Provide the correct answer (e.g., 'A', 'B', 'C', or 'D') along with a brief explanation.\n\n"
-            f"{question_text}\n\nAnswer:"
+            
+            f" I am attempting an online test given by a company. answer this without giving any explanation. just give correct answer {question_text}\n\n"
         )
 
         logging.info(f"Prompt for answer generation: {prompt}")
