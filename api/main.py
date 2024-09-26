@@ -27,7 +27,7 @@ app.add_middleware(
 )
 
 # Single API key for Google Generative AI
-API_KEY = 'YOUR_GOOGLE_GENERATIVEAI_API_KEY'  # Replace with your actual API key
+API_KEY = 'AIzaSyAe0mFYAaMD5XRTWf78jy9Tf2Vzp_UkOHs'  # Replace with your actual API key
 
 # Configure the model with the single API key
 genai.configure(api_key=API_KEY)
