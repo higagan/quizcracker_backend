@@ -1,3 +1,5 @@
+# server.py
+
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List
@@ -18,14 +20,14 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins, replace with specific domains if needed
+    allow_origins=["*"],  # Replace with specific domains in production
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Single API key
-API_KEY = 'AIzaSyAe0mFYAaMD5XRTWf78jy9Tf2Vzp_UkOHs'
+# Single API key for Google Generative AI
+API_KEY = 'YOUR_GOOGLE_GENERATIVEAI_API_KEY'  # Replace with your actual API key
 
 # Configure the model with the single API key
 genai.configure(api_key=API_KEY)
@@ -37,6 +39,9 @@ class QuizGenerationRequest(BaseModel):
     difficulty: List[str]  # Accepting multiple difficulty levels
     numQuestions: int        # Number of questions
     questionTypes: List[str]  # Accepting multiple question types
+
+class MCQAnswerRequest(BaseModel):
+    question_text: str  # The extracted MCQ question with options
 
 @app.get("/get-subtopics")
 async def get_subtopics(request: Request, topic: str = Query(..., description="Generate subtopics for a given topic")):
@@ -79,7 +84,7 @@ async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
         structured_questions = []
         quiz_id = id(request)
         for idx, question in enumerate(raw_questions):
-            options = [{"id": chr(97 + i), "text": option.strip()} for i, option in enumerate(question["options"])]
+            options = [{"id": chr(97 + i).upper(), "text": option.strip()} for i, option in enumerate(question["options"])]
             answer_text = question["answer"].strip().lower()
             answer_id = next(
                 (option["id"] for option in options if option["text"].lower() == answer_text), 
@@ -102,6 +107,47 @@ async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
         raise HTTPException(
             status_code=500, detail=f"An error occurred: {str(e)}"
         )
+
+@app.post("/api/get-answer")
+async def get_answer(request: Request, answer_request: MCQAnswerRequest):
+    """
+    Endpoint to process an MCQ question and return the correct answer.
+    """
+    try:
+        start_time = time.time()
+
+        question_text = answer_request.question_text.strip()
+        if not question_text:
+            raise HTTPException(status_code=400, detail="Question text is required.")
+
+        # Define the prompt for the AI model
+        prompt = (
+            f"You are an intelligent assistant that helps answer multiple-choice questions. "
+            f"Below is the question and the options. Provide the correct answer (e.g., 'A', 'B', 'C', or 'D') along with a brief explanation.\n\n"
+            f"{question_text}\n\nAnswer:"
+        )
+
+        logging.info(f"Prompt for answer generation: {prompt}")
+
+        # Generate the answer using the Generative AI model
+        response = model.generate_content(prompt)
+
+        logging.info(f"AI response took {time.time() - start_time:.2f} seconds")
+
+        ai_text = response.text.strip()
+
+        if not ai_text:
+            raise HTTPException(status_code=500, detail="AI failed to generate an answer.")
+
+        # Optionally, you can parse the AI response to extract the answer and explanation
+        # For simplicity, we'll return the raw AI response
+        return {"answer": ai_text}
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error in /api/get-answer: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 # Main entry point for the application
 if __name__ == "__main__":
