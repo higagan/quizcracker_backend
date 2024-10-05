@@ -49,7 +49,7 @@ class QuizGenerationRequest(BaseModel):
 class FeedbackRequest(BaseModel):
     feedback: str
     email: Optional[str] = None  # Make the email field optional  
-
+    
     # Ensures email is a valid email format
     @validator('email', always=True, pre=True)
     def validate_email(cls, v):
@@ -164,25 +164,29 @@ async def get_questions(request: Request, quiz_request: QuizGenerationRequest):
     raw_questions = None  # Initialize raw_questions
 
     while retry_count < MAX_RETRIES:
-        response = model.generate_content(prompt)
-        response_text = response.text.strip()
-        logging.info(f"API response text: {response_text}")
-
-        # Write response to file for debugging
-        with open('api_response.txt', 'w', encoding='utf-8') as f:
-            f.write(response_text)
-
-        # Sanitize the response
-        sanitized_response = sanitize_response(response_text)
-
-        # Try to parse the JSON
         try:
-            raw_questions = json.loads(sanitized_response)
-            break  # Parsing succeeded
-        except json.JSONDecodeError as e:
-            logging.error(f"JSON decoding failed: {str(e)}")
+            response = model.generate_content(prompt)
+            response_text = response.text.strip()
+            logging.info(f"API response text: {response_text}")
+
+            # Log the API response instead of writing to a file
+            logger.info("API response received.")
+
+            # Sanitize the response
+            sanitized_response = sanitize_response(response_text)
+
+            # Try to parse the JSON
+            try:
+                raw_questions = json.loads(sanitized_response)
+                break  # Parsing succeeded
+            except json.JSONDecodeError as e:
+                logging.error(f"JSON decoding failed: {str(e)}")
+                retry_count += 1
+                time.sleep(1)  # Optional delay between retries
+        except Exception as e:
+            logging.error(f"Error during content generation: {str(e)}")
             retry_count += 1
-            time.sleep(1)  # Optional delay between retries
+            time.sleep(1)
 
     if raw_questions is None:
         raise HTTPException(status_code=500, detail="Failed to parse JSON after sanitization.")
