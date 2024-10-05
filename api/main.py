@@ -31,7 +31,7 @@ API_KEY = 'AIzaSyAe0mFYAaMD5XRTWf78jy9Tf2Vzp_UkOHs'  # Replace with your actual 
 
 # Configure the model with the single API key
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-1.5-pro-latest', generation_config={"response_mime_type": "application/json"})
+model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"response_mime_type": "application/json"})
 
 class QuizGenerationRequest(BaseModel):
     topic: str
